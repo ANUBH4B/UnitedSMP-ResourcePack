@@ -1,0 +1,62 @@
+name: Release Minecraft Resource Pack
+
+on:
+  push:
+    paths:
+      - '**'
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Read VERSION.txt
+        id: version
+        run: |
+          VERSION=$(cat VERSION.txt | tr -d '\r')
+          echo "Using version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Resource Pack Zips
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          mkdir dist
+          zip -r "dist/UnitedSMP-RP-${VERSION}.zip" . -x ".git/*" ".github/*" "dist/*"
+          cp "dist/UnitedSMP-RP-${VERSION}.zip" "dist/unitedsmp-rp.zip"
+
+      - name: Generate SHA-1 for unitedsmp-rp.zip
+        id: sha
+        run: |
+          SHA=$(sha1sum dist/unitedsmp-rp.zip | cut -d " " -f1)
+          echo "$SHA" > dist/sha1.txt
+          echo "sha1=$SHA" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: UnitedSMP Resource Pack v${{ steps.version.outputs.version }}
+          body: |
+            UnitedSMP Resource Pack version ${{ steps.version.outputs.version }}
+
+            ✅ **SHA-1** (for server.properties):
+            ```
+            ${{ steps.sha.outputs.sha1 }}
+            ```
+
+            🔧 **Update in your server.properties file:**
+            ```
+            resource-pack=https://github.com/ANUBH4B/UnitedSMP-ResourcePack/releases/latest/download/unitedsmp-rp.zip
+            resource-pack-sha1=${{ steps.sha.outputs.sha1 }}
+            ```
+          files: |
+            dist/UnitedSMP-RP-${{ steps.version.outputs.version }}.zip
+            dist/unitedsmp-rp.zip
+            dist/sha1.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
