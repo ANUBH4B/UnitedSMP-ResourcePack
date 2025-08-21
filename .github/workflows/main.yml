@@ -59,4 +59,4 @@ jobs:
             dist/unitedsmp-rp.zip
             dist/sha1.txt
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT_USMP }}
